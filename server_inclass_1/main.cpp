@@ -54,9 +54,7 @@ int main(int argc, char *argv[])
 
     int bytesRead = read(newSD, databuf, BUFFSIZE);
     std::cout << "Bytesread " << bytesRead << std::endl;
-    std::cout << databuf[0] << std::endl;
 
-    databuf[78] = 'R'; // change one character in the original incomming message
     int bytesWritten = write(newSD, databuf, BUFFSIZE); // send it back
 
     close(newSD);
