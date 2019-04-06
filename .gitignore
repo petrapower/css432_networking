@@ -4,6 +4,10 @@
 #Mac-specific
 .DS_Store
 
+#project-specific
+client_inclass_1/.idea/
+server_inclass_1/.idea/
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml
