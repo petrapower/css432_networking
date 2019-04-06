@@ -8,15 +8,19 @@
 #include <netinet/tcp.h>  // SO_REUSEADDR
 #include <sys/uio.h>      // writev
 #include <iostream>
-
-const int BUFFSIZE = 1500;
+#include <sys/time.h>
 
 int main(int argc, char *argv[])
 {
+    // TESTING - following vars will be set from command line
+    // TODO: remove hardcoded values and test user-provided args
     int serverPort = 40385; // last 5 digit of my student ID
-    char serverName[60]; // the server name
-    gethostname(serverName, 60);
-    char databuf[BUFFSIZE];
+    int repetition = 1;
+    int nbufs = 1;
+    int bufsize = 1500;
+    char serverName[100]; // the server name
+    gethostname(serverName, 100);
+    int type = 1;
 
     struct hostent *host = gethostbyname(serverName);
     std::cout << "Hostname " << host->h_name << std::endl;
@@ -39,20 +43,41 @@ int main(int argc, char *argv[])
     int rc = connect(clientSD, (sockaddr *) &sendSocketsAddress, sizeof
     (sendSocketsAddress));
 
-    //databuf = new char[BUFFSIZE];
-    for (int i = 0; i < BUFFSIZE; i++)
+    char databuf[nbufs][bufsize];   // nbufs * bufsize = 1500
+
+    // start timer
+    // http://www.cs.loyola.edu/~jglenn/702/S2008/Projects/P3/time.html
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+
+    // type 1
+    for (int j = 0; j < nbufs; j++)
     {
-        databuf[i] = 'z';
+        write(clientSD, databuf[j], bufsize);
     }
-    // write something to server
-    int bytesWritten = write(clientSD, databuf, BUFFSIZE);
+
+    // type 2
+//    struct iovec vector[nbufs];
+//    for (int j = 0; j < nbufs; j++)
+//    {
+//        vector[j].iov_base = databuf[j];
+//        vector[j].iov_len = bufsize;
+//    }
+//    writev(clientSD, vector, nbufs);
+
+    // type 3
+    //int bytesWritten = write(clientSD, databuf, nbufs * bufsize);
+
     // read whatever the server has
-    // in this case, the server changes the 78th char of the original message
-    int bytesRead = read(clientSD, databuf, BUFFSIZE);
+    int bytesRead = read(clientSD, databuf, bufsize);
+
+    // end timer
+    gettimeofday(&end, NULL);
+
     std::cout << "BytesRead " << bytesRead << std::endl;
-    std::cout << databuf[77] << std::endl;
-    std::cout << databuf[78] << std::endl;
-    std::cout << databuf[79] << std::endl;
+    std::cout << "Time elapsed " << (end.tv_sec * 1000000 + end.tv_usec)
+                                    - (start.tv_sec * 1000000 + start.tv_usec)
+              << " microseconds" << std::endl;
 
     close(clientSD);
 }
