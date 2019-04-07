@@ -66,15 +66,17 @@ int main(int argc, char *argv[])
 //    writev(clientSD, vector, nbufs);
 
     // type 3
-    //int bytesWritten = write(clientSD, databuf, nbufs * bufsize);
+//    int bytesWritten = write(clientSD, databuf, nbufs * bufsize);
 
     // read whatever the server has
-    int bytesRead = read(clientSD, databuf, bufsize);
+    int count = 0;
+    int bytesRead = read(clientSD, (char *)&count, sizeof(count));
 
     // end timer
     gettimeofday(&end, NULL);
 
-    std::cout << "BytesRead " << bytesRead << std::endl;
+//    std::cout << "BytesRead " << bytesRead << std::endl;
+    std::cout << "Count " << count << std::endl;
     std::cout << "Time elapsed " << (end.tv_sec * 1000000 + end.tv_usec)
                                     - (start.tv_sec * 1000000 + start.tv_usec)
               << " microseconds" << std::endl;
