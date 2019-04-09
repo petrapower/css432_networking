@@ -34,7 +34,10 @@ int main(int argc, char *argv[])
     acceptSocketsAddress.sin_port = htons(port);
 
     // socket descriptor
-    serverSD = socket(AF_INET, SOCK_STREAM, 0);
+    if((serverSD = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        std::cerr << "Socket Server: socket open failed" << std::endl;
+        exit(1);
+    }
     const int on = 1;
     // allows for reusing the port
     setsockopt(serverSD, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(int));
@@ -45,7 +48,6 @@ int main(int argc, char *argv[])
     (acceptSocketsAddress));
     if (rc < 0)
     {
-        // on UNIX, if code < 0 => error
         std::cerr << "Bind Failed" << std::endl;
     }
 
@@ -80,7 +82,11 @@ void sigioHandler_ReadFromClient(int sig_type)
     socklen_t newSockAddrSize = sizeof(newSockAddr);
 
     // accept
-    int newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize);
+    int newSD;
+    if((newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize)) < 0){
+        std::cerr << "Socket Server: accept failed" << std::endl;
+        exit(1);
+    }
     std::cout << "Accepted Socket " << newSD << std::endl;
 
     int count = 0;
