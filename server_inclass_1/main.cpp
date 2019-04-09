@@ -11,7 +11,7 @@
 #include <sys/fcntl.h>
 
 int serverSD;
-int repetition;
+int repetition; // user-defined value
 
 const int BUFSIZE = 1500;
 const int NUM_CONNECTIONS = 5;
@@ -20,9 +20,25 @@ void sigioHandler_ReadFromClient(int sig_type);
 
 int main(int argc, char *argv[])
 {
-    // TODO: remove hardcoded values and test user-provided args
-    int port = 40385; // last 5 digit of my student ID
-    repetition = 10;
+    if(argc < 3){
+        std::cout << "Usage: server_program_1 #unusedPort #repetitions" << std::endl;
+        exit(1);
+    }
+
+    // user-defined value
+    int port;
+
+    try{
+        // http://www.cplusplus.com/reference/string/stoi/
+        size_t sz;
+        port = std::stoi(argv[1], &sz); // 40385
+        repetition = std::stoi(argv[2], &sz);
+    }
+    catch(std::invalid_argument){
+        std::cout << "Please enter valid arguments.\n";
+        std::cout << "Usage: server_program_1 #unusedPort #repetitions" << std::endl;
+        exit(1);
+    }
 
     sockaddr_in acceptSocketsAddress;
     // zeroing oit sockaddr_in datastructure
@@ -92,6 +108,7 @@ void sigioHandler_ReadFromClient(int sig_type)
     int count = 0;
     for(int i = 0; i < repetition; i++)
     {
+        std::cout << "Repetition " << i << "/" << repetition << std::endl;
         int nRead = 0;
         while (nRead < BUFSIZE)
         {
@@ -102,7 +119,14 @@ void sigioHandler_ReadFromClient(int sig_type)
         }
         std::cout << "CurrentCount " << count << std::endl;
     }
-    write(newSD, (char *) &count, sizeof(count));
+
+    std::cout << "Out of loop" << std::endl;
+
+    if(write(newSD, (char *) &count, sizeof(count)) < 0){
+        std::cout << "Socket Server: write failed" << std::endl;
+    }
+
+    std::cout << "Done writing" << std::endl;
 
     close(serverSD);
     exit(0);
