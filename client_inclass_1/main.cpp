@@ -14,15 +14,24 @@ int main(int argc, char *argv[])
 {
     // TESTING - following vars will be set from command line
     // TODO: remove hardcoded values and test user-provided args
+    // user-defined values
     int serverPort = 40385; // last 5 digit of my student ID
-    int repetition = 1;
-    int nbufs = 1;
-    int bufsize = 1500;
-    char serverName[100]; // the server name
-    gethostname(serverName, 100);
+    int repetition = 10;
+    int nbufs = 3;
+    int bufsize = 500;
     int type = 1;
+    char serverIp[100];
 
-    struct hostent *host = gethostbyname(serverName);
+    if (gethostname(serverIp, 100) != 0){
+        std::cout << "Socket Client: unable to identify host: " << serverIp << std::endl;
+        exit(1);
+    }
+
+    struct hostent *host = gethostbyname(serverIp);
+    if(!host){
+        std::cout << "Socket Client: unknown host: " << serverIp << std::endl;
+        exit(1);
+    }
     std::cout << "Hostname " << host->h_name << std::endl;
 
     sockaddr_in sendSocketsAddress;
@@ -50,33 +59,48 @@ int main(int argc, char *argv[])
     struct timeval start, end;
     gettimeofday(&start, NULL);
 
-    // type 1
-    for (int j = 0; j < nbufs; j++)
+    int countReads = 0;
+    for (int i = 0; i < repetition; i++)
     {
-        write(clientSD, databuf[j], bufsize);
+
+        if (type == 1)
+        {
+            for (int j = 0; j < nbufs; j++)
+            {
+                sleep(1);   // mitigates race condition
+                // if write arrives before server finishes its current work
+                write(clientSD, databuf[j], bufsize);
+            }
+        }
+        else if (type == 2)
+        {
+            struct iovec vector[nbufs];
+            for (int j = 0; j < nbufs; j++)
+            {
+                vector[j].iov_base = databuf[j];
+                vector[j].iov_len = bufsize;
+            }
+            sleep(1);   // mitigates race condition
+            // if write arrives before server finishes its current work
+            writev(clientSD, vector, nbufs);
+        }
+        else
+        {
+            sleep(1);   // mitigates race condition
+            // if write arrives before server finishes its current work
+            write(clientSD, databuf, nbufs * bufsize);
+        }
+
     }
 
-    // type 2
-//    struct iovec vector[nbufs];
-//    for (int j = 0; j < nbufs; j++)
-//    {
-//        vector[j].iov_base = databuf[j];
-//        vector[j].iov_len = bufsize;
-//    }
-//    writev(clientSD, vector, nbufs);
-
-    // type 3
-//    int bytesWritten = write(clientSD, databuf, nbufs * bufsize);
-
-    // read whatever the server has
-    int count = 0;
-    int bytesRead = read(clientSD, (char *)&count, sizeof(count));
+    // read how many times the
+    int bytesRead = read(clientSD, (char *) &countReads, sizeof(countReads));
 
     // end timer
     gettimeofday(&end, NULL);
 
 //    std::cout << "BytesRead " << bytesRead << std::endl;
-    std::cout << "Count " << count << std::endl;
+    std::cout << "Count " << countReads << std::endl;
     std::cout << "Time elapsed " << (end.tv_sec * 1000000 + end.tv_usec)
                                     - (start.tv_sec * 1000000 + start.tv_usec)
               << " microseconds" << std::endl;

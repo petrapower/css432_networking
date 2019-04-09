@@ -11,17 +11,18 @@
 #include <sys/fcntl.h>
 
 int serverSD;
+int repetition;
 
 const int BUFSIZE = 1500;
 const int NUM_CONNECTIONS = 5;
 
-void readFromClient(int sig_type);
+void sigioHandler_ReadFromClient(int sig_type);
 
 int main(int argc, char *argv[])
 {
     // TODO: remove hardcoded values and test user-provided args
     int port = 40385; // last 5 digit of my student ID
-    int repetition = 1;
+    repetition = 10;
 
     sockaddr_in acceptSocketsAddress;
     // zeroing oit sockaddr_in datastructure
@@ -51,25 +52,14 @@ int main(int argc, char *argv[])
     // listen
     listen(serverSD, NUM_CONNECTIONS);
 
-
-
     // https://www.tutorialspoint.com/cplusplus/cpp_signal_handling.htm
     //https://books.google.com/books?id=dmt_mERzxV4C&pg=PA109&lpg=PA109&dq=cpp+sigio+fcntl+signal&source=bl&ots=dt8W3MFIMH&sig=ACfU3U2LIxvfB_wvuuee3-j0mdUi1CPihA&hl=en&sa=X&ved=2ahUKEwiJ4bHI-bzhAhVTnJ4KHVVfA4s4ChDoATAFegQICRAB#v=onepage&q=cpp%20sigio%20fcntl%20signal%20accept&f=false
-    signal(SIGIO, readFromClient);
+    signal(SIGIO, sigioHandler_ReadFromClient);
 
     std::cout << "Out of signal" << std::endl;
 
     fcntl(serverSD, F_SETOWN, getpid());
     fcntl(serverSD, F_SETFL, FASYNC);
-
-
-
-    // https://stackoverflow.com/questions/36711131/how-to-sleep-forever-only-using-c11
-//    while (1)
-//    {
-//        std::cout << "Sleeping..." << std::endl;
-//        sleep(1);
-//    }
 
     // https://books.google.com/books?id=dmt_mERzxV4C&pg=PA109&lpg=PA109&dq=cpp+sigio
     // +fcntl+signal&source=bl&ots=dt8W3MFIMH&sig=ACfU3U2LIxvfB_wvuuee3-j0mdUi1CPihA&hl=en&sa=X&ved=2ahUKEwiJ4bHI-bzhAhVTnJ4KHVVfA4s4ChDoATAFegQICRAB#v=onepage&q=cpp%20sigio%20fcntl%20signal%20accept&f=false
@@ -80,7 +70,7 @@ int main(int argc, char *argv[])
 }
 
 // the signalID will not be used in the function body
-void readFromClient(int sig_type)
+void sigioHandler_ReadFromClient(int sig_type)
 {
     char databuf[BUFSIZE];
     bzero(databuf, BUFSIZE);
@@ -93,19 +83,20 @@ void readFromClient(int sig_type)
     int newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize);
     std::cout << "Accepted Socket " << newSD << std::endl;
 
-    int bytesRead = 0;
     int count = 0;
-    int nRead = 0;
-    while (nRead < BUFSIZE)
+    for(int i = 0; i < repetition; i++)
     {
-        bytesRead = read(newSD, databuf, BUFSIZE - nRead);
-        nRead += bytesRead;
-        count++;
+        int nRead = 0;
+        while (nRead < BUFSIZE)
+        {
+            int bytesRead = read(newSD, databuf, BUFSIZE - nRead);
+            std::cout << "BytesRead " << bytesRead << std::endl;
+            nRead += bytesRead;
+            count++;
+        }
+        std::cout << "CurrentCount " << count << std::endl;
     }
-
-    std::cout << "Count " << count << std::endl;
-    std::cout << "BytesRead " << bytesRead << std::endl;
-    write(newSD, (char *)&count, sizeof(count));
+    write(newSD, (char *) &count, sizeof(count));
 
     close(serverSD);
     exit(0);
