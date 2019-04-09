@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     acceptSocketsAddress.sin_family = AF_INET;
     // for this address, I'll be able to listen to any calls to it
     acceptSocketsAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    // htons changes int the format to network int format
+    // changes int the format to network int format
     acceptSocketsAddress.sin_port = htons(port);
 
     // socket descriptor

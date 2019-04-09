@@ -22,35 +22,44 @@ int main(int argc, char *argv[])
     int type = 1;
     char serverIp[100];
 
-    if (gethostname(serverIp, 100) != 0){
+    if (gethostname(serverIp, 100) < -1)
+    {
         std::cout << "Socket Client: unable to identify host: " << serverIp << std::endl;
         exit(1);
     }
 
     struct hostent *host = gethostbyname(serverIp);
-    if(!host){
+    if (!host)
+    {
         std::cout << "Socket Client: unknown host: " << serverIp << std::endl;
         exit(1);
     }
     std::cout << "Hostname " << host->h_name << std::endl;
 
     sockaddr_in sendSocketsAddress;
-    // zeroing oit sockaddr_in datastructure
+    // zeroing out sockaddr_in datastructure
     bzero((char *) &sendSocketsAddress, sizeof(sendSocketsAddress));
     sendSocketsAddress.sin_family = AF_INET;
     sendSocketsAddress.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr *)
             (*host->h_addr_list)));
-    // htonl changes the format to network format
+    // changes the int format to network int format
     sendSocketsAddress.sin_port = htons(serverPort);
 
     // socket descriptor
-    int clientSD = socket(AF_INET, SOCK_STREAM, 0);
-    const int on = 1;
+    int clientSD;
+    if((clientSD = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+        std::cout << "Socket Client: socket open failed" << std::endl;
+        exit(1);
+    }
     std::cout << "ServerSD " << clientSD << std::endl;
 
     // connect
-    int rc = connect(clientSD, (sockaddr *) &sendSocketsAddress, sizeof
-    (sendSocketsAddress));
+    if(connect(clientSD, (sockaddr *) &sendSocketsAddress, sizeof
+    (sendSocketsAddress)) < 0){
+        std::cout << "Socket Client: connect failed" << std::endl;
+        close(clientSD);
+        exit(1);
+    }
 
     char databuf[nbufs][bufsize];   // nbufs * bufsize = 1500
 
