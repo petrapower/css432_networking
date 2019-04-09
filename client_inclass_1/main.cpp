@@ -24,14 +24,14 @@ int main(int argc, char *argv[])
 
     if (gethostname(serverIp, 100) < -1)
     {
-        std::cout << "Socket Client: unable to identify host: " << serverIp << std::endl;
+        std::cerr << "Socket Client: unable to identify host: " << serverIp << std::endl;
         exit(1);
     }
 
     struct hostent *host = gethostbyname(serverIp);
     if (!host)
     {
-        std::cout << "Socket Client: unknown host: " << serverIp << std::endl;
+        std::cerr << "Socket Client: unknown host: " << serverIp << std::endl;
         exit(1);
     }
     std::cout << "Hostname " << host->h_name << std::endl;
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     // socket descriptor
     int clientSD;
     if((clientSD = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        std::cout << "Socket Client: socket open failed" << std::endl;
+        std::cerr << "Socket Client: socket open failed" << std::endl;
         exit(1);
     }
     std::cout << "ServerSD " << clientSD << std::endl;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
     // connect
     if(connect(clientSD, (sockaddr *) &sendSocketsAddress, sizeof
     (sendSocketsAddress)) < 0){
-        std::cout << "Socket Client: connect failed" << std::endl;
+        std::cerr << "Socket Client: connect failed" << std::endl;
         close(clientSD);
         exit(1);
     }
