@@ -3,4 +3,4 @@ project(program1_inclass_prep)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(program1_inclass_prep main.cpp)
+add_executable(program1_inclass_prep server_main.cpp)
