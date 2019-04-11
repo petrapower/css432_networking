@@ -4,9 +4,10 @@
 #include <arpa/inet.h>    // inet_ntoa
 #include <netdb.h>        // gethostbyname
 #include <unistd.h>       // read, write, close
-#include <string.h>       // bzero
+#include <cstring>       // bzero
 #include <netinet/tcp.h>  // SO_REUSEADDR
 #include <sys/uio.h>      // writev
+#include <csignal>
 #include <iostream>
 #include <sys/fcntl.h>
 
@@ -20,7 +21,8 @@ void sigioHandler_ReadFromClient(int sig_type);
 
 int main(int argc, char *argv[])
 {
-    if(argc < 3){
+    if (argc < 3)
+    {
         std::cout << "Usage: server_program_1 #unusedPort #repetitions" << std::endl;
         exit(1);
     }
@@ -28,20 +30,22 @@ int main(int argc, char *argv[])
     // user-defined value
     int port;
 
-    try{
+    try
+    {
         // http://www.cplusplus.com/reference/string/stoi/
         size_t sz;
         port = std::stoi(argv[1], &sz); // 40385
         repetition = std::stoi(argv[2], &sz);
     }
-    catch(std::invalid_argument){
+    catch (std::invalid_argument)
+    {
         std::cout << "Please enter valid arguments.\n";
         std::cout << "Usage: server_program_1 #unusedPort #repetitions" << std::endl;
         exit(1);
     }
 
     sockaddr_in acceptSocketsAddress;
-    // zeroing oit sockaddr_in datastructure
+    // zeroing out sockaddr_in datastructure
     bzero((char *) &acceptSocketsAddress, sizeof(acceptSocketsAddress));
     acceptSocketsAddress.sin_family = AF_INET;
     // for this address, I'll be able to listen to any calls to it
@@ -50,7 +54,8 @@ int main(int argc, char *argv[])
     acceptSocketsAddress.sin_port = htons(port);
 
     // socket descriptor
-    if((serverSD = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    if ((serverSD = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
         std::cerr << "Socket Server: socket open failed" << std::endl;
         exit(1);
     }
@@ -64,7 +69,7 @@ int main(int argc, char *argv[])
     (acceptSocketsAddress));
     if (rc < 0)
     {
-        std::cerr << "Bind Failed" << std::endl;
+        std::cerr << "Socket Server: bind failed" << std::endl;
     }
 
     // listen
@@ -74,15 +79,14 @@ int main(int argc, char *argv[])
     //https://books.google.com/books?id=dmt_mERzxV4C&pg=PA109&lpg=PA109&dq=cpp+sigio+fcntl+signal&source=bl&ots=dt8W3MFIMH&sig=ACfU3U2LIxvfB_wvuuee3-j0mdUi1CPihA&hl=en&sa=X&ved=2ahUKEwiJ4bHI-bzhAhVTnJ4KHVVfA4s4ChDoATAFegQICRAB#v=onepage&q=cpp%20sigio%20fcntl%20signal%20accept&f=false
     signal(SIGIO, sigioHandler_ReadFromClient);
 
-    std::cout << "Out of signal" << std::endl;
-
     fcntl(serverSD, F_SETOWN, getpid());
     fcntl(serverSD, F_SETFL, FASYNC);
 
     // https://books.google.com/books?id=dmt_mERzxV4C&pg=PA109&lpg=PA109&dq=cpp+sigio
     // +fcntl+signal&source=bl&ots=dt8W3MFIMH&sig=ACfU3U2LIxvfB_wvuuee3-j0mdUi1CPihA&hl=en&sa=X&ved=2ahUKEwiJ4bHI-bzhAhVTnJ4KHVVfA4s4ChDoATAFegQICRAB#v=onepage&q=cpp%20sigio%20fcntl%20signal%20accept&f=false
-    for(;;){
-        std::cout << "Sleeping..." << std::endl;
+    for (;;)
+    {
+//        std::cout << "Sleeping..." << std::endl;
         sleep(3);
     }
 }
@@ -92,41 +96,34 @@ void sigioHandler_ReadFromClient(int sig_type)
 {
     char databuf[BUFSIZE];
     bzero(databuf, BUFSIZE);
-    std::cout << "In signal" << std::endl;
 
     sockaddr_in newSockAddr;
     socklen_t newSockAddrSize = sizeof(newSockAddr);
 
     // accept
     int newSD;
-    if((newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize)) < 0){
+    if ((newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize)) < 0)
+    {
         std::cerr << "Socket Server: accept failed" << std::endl;
         exit(1);
     }
-    std::cout << "Accepted Socket " << newSD << std::endl;
 
     int count = 0;
-    for(int i = 0; i < repetition; i++)
+    for (int i = 0; i < repetition; i++)
     {
-        std::cout << "Repetition " << i << "/" << repetition << std::endl;
         int nRead = 0;
         while (nRead < BUFSIZE)
         {
             int bytesRead = read(newSD, databuf, BUFSIZE - nRead);
-            std::cout << "BytesRead " << bytesRead << std::endl;
             nRead += bytesRead;
             count++;
         }
-        std::cout << "CurrentCount " << count << std::endl;
     }
 
-    std::cout << "Out of loop" << std::endl;
-
-    if(write(newSD, (char *) &count, sizeof(count)) < 0){
+    if (write(newSD, (char *) &count, sizeof(count)) < 0)
+    {
         std::cout << "Socket Server: write failed" << std::endl;
     }
-
-    std::cout << "Done writing" << std::endl;
 
     close(serverSD);
     exit(0);
