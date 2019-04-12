@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
         std::cerr << "Socket Client: socket open failed" << std::endl;
         exit(1);
     }
-    std::cout << "ServerSD " << clientSD << std::endl;
 
     // connect
     if (connect(clientSD, (sockaddr *) &sendSocketsAddress, sizeof
