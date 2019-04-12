@@ -12,6 +12,7 @@
 #include <sys/fcntl.h>
 
 int serverSD;
+int newSD;
 int repetition; // user-defined value
 
 const int BUFSIZE = 1500;
@@ -59,10 +60,11 @@ int main(int argc, char *argv[])
         std::cerr << "Socket Server: socket open failed" << std::endl;
         exit(1);
     }
+    std::cout << "Server starting" << std::endl;
+
     const int on = 1;
     // allows for reusing the port
     setsockopt(serverSD, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(int));
-    std::cout << "ServerSD " << serverSD << std::endl;
 
     // binding
     int rc = bind(serverSD, (sockaddr *) &acceptSocketsAddress, sizeof
@@ -75,12 +77,23 @@ int main(int argc, char *argv[])
     // listen
     listen(serverSD, NUM_CONNECTIONS);
 
+    sockaddr_in newSockAddr;
+    socklen_t newSockAddrSize = sizeof(newSockAddr);
+
+    // accept
+    if ((newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize)) < 0)
+    {
+        std::cerr << "Socket Server: accept failed" << std::endl;
+        exit(1);
+    }
+    std::cout << "Server ready" << std::endl;
+
     // https://www.tutorialspoint.com/cplusplus/cpp_signal_handling.htm
     //https://books.google.com/books?id=dmt_mERzxV4C&pg=PA109&lpg=PA109&dq=cpp+sigio+fcntl+signal&source=bl&ots=dt8W3MFIMH&sig=ACfU3U2LIxvfB_wvuuee3-j0mdUi1CPihA&hl=en&sa=X&ved=2ahUKEwiJ4bHI-bzhAhVTnJ4KHVVfA4s4ChDoATAFegQICRAB#v=onepage&q=cpp%20sigio%20fcntl%20signal%20accept&f=false
     signal(SIGIO, sigioHandler_ReadFromClient);
 
-    fcntl(serverSD, F_SETOWN, getpid());
-    fcntl(serverSD, F_SETFL, FASYNC);
+    fcntl(newSD, F_SETOWN, getpid());
+    fcntl(newSD, F_SETFL, FASYNC);
 
     // https://books.google.com/books?id=dmt_mERzxV4C&pg=PA109&lpg=PA109&dq=cpp+sigio
     // +fcntl+signal&source=bl&ots=dt8W3MFIMH&sig=ACfU3U2LIxvfB_wvuuee3-j0mdUi1CPihA&hl=en&sa=X&ved=2ahUKEwiJ4bHI-bzhAhVTnJ4KHVVfA4s4ChDoATAFegQICRAB#v=onepage&q=cpp%20sigio%20fcntl%20signal%20accept&f=false
@@ -96,17 +109,6 @@ void sigioHandler_ReadFromClient(int sig_type)
 {
     char databuf[BUFSIZE];
     bzero(databuf, BUFSIZE);
-
-    sockaddr_in newSockAddr;
-    socklen_t newSockAddrSize = sizeof(newSockAddr);
-
-    // accept
-    int newSD;
-    if ((newSD = accept(serverSD, (sockaddr *) &newSockAddr, &newSockAddrSize)) < 0)
-    {
-        std::cerr << "Socket Server: accept failed" << std::endl;
-        exit(1);
-    }
 
     int count = 0;
     for (int i = 0; i < repetition; i++)
@@ -125,6 +127,7 @@ void sigioHandler_ReadFromClient(int sig_type)
         std::cout << "Socket Server: write failed" << std::endl;
     }
 
+    std::cout << "Server finished" << std::endl;
     close(serverSD);
     exit(0);
 }
