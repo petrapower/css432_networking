@@ -123,11 +123,10 @@ int main(int argc, char *argv[])
     // end timer
     gettimeofday(&end, NULL);
 
-    // subtract time spent sleeping from actual socket exchange info
-    std::cout << "Test# " << type << ": Count " << countReads
-              << " Time elapsed " << (end.tv_sec * 1000000 + end.tv_usec)
+    std::cout << "Test " << type
+              << ": round-trip time = " << (end.tv_sec * 1000000 + end.tv_usec)
                                     - (start.tv_sec * 1000000 + start.tv_usec)
-              << " microseconds" << std::endl;
+              << " microseconds" << ", # reads = " << countReads << std::endl;
 
     close(clientSD);
 }
